@@ -1,0 +1,5 @@
+[中文]
+请使用此处的bootloader.c替换src/bootloader.c文件再开始编译；
+
+[English]
+Please copy bootloader.c which local in this directory to src/bootloader.c, and then compile miui recovery for k860; 

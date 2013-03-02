@@ -26,14 +26,12 @@
 #include <unistd.h>
 
 /* bootloader command is this block */
-#define RECOVERY_FLAG_BLOCK	15420
-#define RECOVERY_FLAG_BLOCK_HEAD 1060
+#define RECOVERY_FLAG_BLOCK	1060
 
 static int get_bootloader_message_mtd(struct bootloader_message *out, const Volume* v);
 static int set_bootloader_message_mtd(const struct bootloader_message *in, const Volume* v);
 static int get_bootloader_message_block(struct bootloader_message *out, const Volume* v);
 static int set_bootloader_message_block(const struct bootloader_message *in, const Volume* v);
-static int set_bootloader_message_block_head(const struct bootloader_message *in, const Volume* v);
 
 int get_bootloader_message(struct bootloader_message *out) {
     Volume* v = volume_for_path("/misc");
@@ -59,7 +57,6 @@ int set_bootloader_message(const struct bootloader_message *in) {
     if (strcmp(v->fs_type, "mtd") == 0) {
         return set_bootloader_message_mtd(in, v);
     } else if (strcmp(v->fs_type, "emmc") == 0) {
-        set_bootloader_message_block_head(in, v);
         return set_bootloader_message_block(in, v);
     }
     LOGE("unknown misc partition fs_type \"%s\"\n", v->fs_type);
@@ -202,32 +199,6 @@ static int set_bootloader_message_block(const struct bootloader_message *in,
     }
 
 	if (fseek(f, RECOVERY_FLAG_BLOCK * 512, 0)) {
-		LOGE("Failed seek %s\n(%s)\n",v->device, strerror(errno));
-		return -1;
-	}
-
-    int count = fwrite(in, sizeof(*in), 1, f);
-    if (count != 1) {
-        LOGE("Failed writing %s\n(%s)\n", v->device, strerror(errno));
-        return -1;
-    }
-    if (fclose(f) != 0) {
-        LOGE("Failed closing %s\n(%s)\n", v->device, strerror(errno));
-        return -1;
-    }
-    return 0;
-}
-
-static int set_bootloader_message_block_head(const struct bootloader_message *in,
-                                        const Volume* v) {
-    wait_for_device(v->device);
-    FILE* f = fopen(v->device, "wb");
-    if (f == NULL) {
-        LOGE("Can't open %s\n(%s)\n", v->device, strerror(errno));
-        return -1;
-    }
-
-	if (fseek(f, RECOVERY_FLAG_BLOCK_HEAD * 512, 0)) {
 		LOGE("Failed seek %s\n(%s)\n",v->device, strerror(errno));
 		return -1;
 	}
